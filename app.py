@@ -90,6 +90,20 @@ app.layout = html.Div([
         style={"maxWidth": "1200px", "margin": "0 auto"}
     ),
 
+        
+    # Phần Đề xuất
+    html.Div([
+        html.H2("Đề Xuất Chiến Lược", style={"textAlign": "center", "marginTop": "30px"}),
+        html.Div(id="business_recommendations", style={
+            "padding": "20px",
+            "border": "1px solid #ccc",
+            "borderRadius": "10px",
+            "backgroundColor": "#f9f9f9",
+            "margin": "0 auto",
+            "maxWidth": "800px"
+        })
+    ]),
+    
     # Hiển thị thông báo khi không có dữ liệu
     html.Div(
         id="no_data_message", 
@@ -214,6 +228,58 @@ def update_chart(main_category, sub_category, chart_type):
 
     # Trả về biểu đồ và thông báo trống
     return fig, ""
+
+@app.callback(
+    Output("business_recommendations", "children"),
+    [Input("main_category_filter", "value"),
+     Input("sub_category_filter", "value")]
+)
+def generate_recommendations(main_category, sub_category):
+    # Lọc dữ liệu theo bộ lọc
+    filtered_df = df.copy()
+    if main_category:
+        filtered_df = filtered_df[filtered_df["main_category"] == main_category]
+    if sub_category:
+        filtered_df = filtered_df[filtered_df["sub_category"] == sub_category]
+
+    # Nếu không có dữ liệu, trả về thông báo
+    if filtered_df.empty:
+        return "Không đủ dữ liệu để đưa ra đề xuất!"
+
+    # Tạo đề xuất
+    recommendations = []
+
+    # Đề xuất 1: Tập trung vào sản phẩm bán chạy
+    top_products = filtered_df.nlargest(5, "no_of_ratings")["name"].tolist()
+    if top_products:
+        recommendations.append(
+            html.P(f"Tập trung vào các sản phẩm bán chạy: {', '.join(top_products[:3])}...")
+        )
+
+    # Đề xuất 2: Tăng cường danh mục chính
+    main_category_count = filtered_df["main_category"].value_counts()
+    if not main_category_count.empty:
+        top_main_category = main_category_count.idxmax()
+        recommendations.append(
+            html.P(f"Tăng cường đầu tư vào danh mục chính '{top_main_category}' vì có lượng sản phẩm cao.")
+        )
+
+    # Đề xuất 3: Điều chỉnh tỷ lệ giảm giá
+    avg_discount = filtered_df["discount_percentage"].mean()
+    if avg_discount:
+        recommendations.append(
+            html.P(f"Tỷ lệ giảm giá trung bình hiện tại là {avg_discount:.2f}%. "
+                   f"Cân nhắc tập trung vào ngưỡng giảm giá này để tối ưu doanh số.")
+        )
+
+    # Đề xuất 4: Xử lý các sản phẩm đánh giá thấp
+    low_rated_products = filtered_df[filtered_df["ratings"] < 3]["name"].tolist()
+    if low_rated_products:
+        recommendations.append(
+            html.P(f"Cải thiện chất lượng hoặc chiến lược marketing cho sản phẩm: {', '.join(low_rated_products[:3])}...")
+        )
+
+    return recommendations
 
 
 # Chạy ứng dụng
