@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 
 # Đọc và chuẩn hóa dữ liệu
-df = pd.read_csv('data/sample_data.csv')
+df = pd.read_csv('data/data.csv')
 
 # Xử lý dữ liệu thiếu
 df.fillna({'main_category': 'Unknown', 'sub_category': 'Unknown'}, inplace=True)
